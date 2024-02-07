@@ -14,16 +14,16 @@ void EveryConsole::processReplacing(float **inputs, float **outputs, VstInt32 sa
     float* out1 = outputs[0];
     float* out2 = outputs[1];
 
-	double half = 0.0;
-	double falf = 0.0;
+	long double half = 0.0;
+	long double falf = 0.0;
 	int console = (int) A*11.999;
-	double inTrim = B*2.0; //0-2
-	double outTrim = C*2.0;
+	long double inTrim = B*2.0; //0-2
+	long double outTrim = C*2.0;
     
     while (--sampleFrames >= 0)
     {
-		double inputSampleL = *in1;
-		double inputSampleR = *in2;
+		long double inputSampleL = *in1;
+		long double inputSampleR = *in2;
 		if (fabs(inputSampleL)<1.18e-23) inputSampleL = fpdL * 1.18e-17;
 		if (fabs(inputSampleR)<1.18e-23) inputSampleR = fpdR * 1.18e-17;
 		
@@ -168,14 +168,14 @@ void EveryConsole::processReplacing(float **inputs, float **outputs, VstInt32 sa
 			inputSampleR *= outTrim;
 		}
 		
-		//begin 32 bit stereo floating point dither
+		//stereo 32 bit dither, made small and tidy.
 		int expon; frexpf((float)inputSampleL, &expon);
-		fpdL ^= fpdL << 13; fpdL ^= fpdL >> 17; fpdL ^= fpdL << 5;
-		inputSampleL += ((double(fpdL)-uint32_t(0x7fffffff)) * 5.5e-36l * pow(2,expon+62));
+		long double dither = (rand()/(RAND_MAX*7.737125245533627e+25))*pow(2,expon+62);
+		inputSampleL += (dither-fpNShapeL); fpNShapeL = dither;
 		frexpf((float)inputSampleR, &expon);
-		fpdR ^= fpdR << 13; fpdR ^= fpdR >> 17; fpdR ^= fpdR << 5;
-		inputSampleR += ((double(fpdR)-uint32_t(0x7fffffff)) * 5.5e-36l * pow(2,expon+62));
-		//end 32 bit stereo floating point dither
+		dither = (rand()/(RAND_MAX*7.737125245533627e+25))*pow(2,expon+62);
+		inputSampleR += (dither-fpNShapeR); fpNShapeR = dither;
+		//end 32 bit dither
 		
 		*out1 = inputSampleL;
 		*out2 = inputSampleR;
@@ -187,23 +187,23 @@ void EveryConsole::processReplacing(float **inputs, float **outputs, VstInt32 sa
     }
 }
 
-void EveryConsole::processDoubleReplacing(double **inputs, double **outputs, VstInt32 sampleFrames) 
+void EveryConsole::processdoubleReplacing(double **inputs, double **outputs, VstInt32 sampleFrames) 
 {
     double* in1  =  inputs[0];
     double* in2  =  inputs[1];
     double* out1 = outputs[0];
     double* out2 = outputs[1];
 	
-	double half = 0.0;
-	double falf = 0.0;
+	long double half = 0.0;
+	long double falf = 0.0;
 	int console = (int) A*11.999;
-	double inTrim = B*2.0; //0-2
-	double outTrim = C*2.0;
+	long double inTrim = B*2.0; //0-2
+	long double outTrim = C*2.0;
     
     while (--sampleFrames >= 0)
     {
-		double inputSampleL = *in1;
-		double inputSampleR = *in2;
+		long double inputSampleL = *in1;
+		long double inputSampleR = *in2;
 		if (fabs(inputSampleL)<1.18e-23) inputSampleL = fpdL * 1.18e-17;
 		if (fabs(inputSampleR)<1.18e-23) inputSampleR = fpdR * 1.18e-17;
 		
@@ -348,14 +348,16 @@ void EveryConsole::processDoubleReplacing(double **inputs, double **outputs, Vst
 			inputSampleR *= outTrim;
 		}
 		
-		//begin 64 bit stereo floating point dither
-		//int expon; frexp((double)inputSampleL, &expon);
-		fpdL ^= fpdL << 13; fpdL ^= fpdL >> 17; fpdL ^= fpdL << 5;
-		//inputSampleL += ((double(fpdL)-uint32_t(0x7fffffff)) * 1.1e-44l * pow(2,expon+62));
-		//frexp((double)inputSampleR, &expon);
-		fpdR ^= fpdR << 13; fpdR ^= fpdR >> 17; fpdR ^= fpdR << 5;
-		//inputSampleR += ((double(fpdR)-uint32_t(0x7fffffff)) * 1.1e-44l * pow(2,expon+62));
-		//end 64 bit stereo floating point dither
+		//stereo 64 bit dither, made small and tidy.
+		int expon; frexp((double)inputSampleL, &expon);
+		long double dither = (rand()/(RAND_MAX*7.737125245533627e+25))*pow(2,expon+62);
+		dither /= 536870912.0; //needs this to scale to 64 bit zone
+		inputSampleL += (dither-fpNShapeL); fpNShapeL = dither;
+		frexp((double)inputSampleR, &expon);
+		dither = (rand()/(RAND_MAX*7.737125245533627e+25))*pow(2,expon+62);
+		dither /= 536870912.0; //needs this to scale to 64 bit zone
+		inputSampleR += (dither-fpNShapeR); fpNShapeR = dither;
+		//end 64 bit dither
 		
 		*out1 = inputSampleL;
 		*out2 = inputSampleR;
